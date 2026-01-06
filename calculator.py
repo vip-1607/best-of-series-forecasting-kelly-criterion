@@ -1,16 +1,6 @@
-import sys
-import io
-
-# Windows 인코딩 문제 해결
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-
-# ==========================================
-# ⚙️ [설정 영역]
-# ==========================================
+# [설정 영역]
 TARGET_SCORE = 2      # 승리하기 위해 필요한 세트 수 (3판 2선승제면 2, 5판 3선승제면 3)
 WIN_RATE = 53.0       # A팀의 세트 승률 (%)
-# ==========================================
 
 def calculate_series_win_rate(p, target_score):
     """
@@ -121,18 +111,18 @@ if __name__ == "__main__":
     # 결과 출력
     # ==========================================
     print(f"\n{'='*45}")
-    print(f"📊 분석 결과: {best_of_n}전 {target_score}선승제 (세트 승률 {p*100:.1f}%)")
+    print(f"분석 결과: {best_of_n}전 {target_score}선승제 (세트 승률 {p*100:.1f}%)")
     print(f"{'='*45}")
     
     print("\n[1] 최종 시리즈 승률")
-    print(f"  🔴 A팀 승리 확률: {a_win_prob*100:.2f}%")
-    print(f"  🔵 B팀 승리 확률: {b_win_prob*100:.2f}%")
+    print(f"  A팀 승리 확률: {a_win_prob*100:.2f}%")
+    print(f"  B팀 승리 확률: {b_win_prob*100:.2f}%")
     
     print("\n[2] 가장 가능성 높은 스코어")
     sorted_scores = sorted(score_probs.items(), key=lambda x: x[1], reverse=True)
     for i, (score, prob) in enumerate(sorted_scores):
         a_score, b_score = map(int, score.split(':'))
-        winner = "🔴A승" if a_score > b_score else "🔵B승"
+        winner = "A승" if a_score > b_score else "B승"
         print(f"  {i+1}위: {score} ({winner}) → {prob*100:.2f}%")
     
     print("\n[3] 경기 길이 예상 (Total Games)")
@@ -142,5 +132,5 @@ if __name__ == "__main__":
         print(f"  - {games}세트에서 종료: {prob*100:.2f}%")
         expected_value += games * prob
     
-    print(f"\n  💡 평균 기대 경기 수: {expected_value:.2f} 세트")
+    print(f"\n평균 기대 경기 수: {expected_value:.2f} 세트")
     print(f"{'='*45}\n")

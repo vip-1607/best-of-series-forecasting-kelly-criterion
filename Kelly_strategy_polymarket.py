@@ -1,3 +1,8 @@
+# [설정 영역]
+win_prob = 0.9   # 내 생각의 승률 (0~1 사이 값)
+market_price = 0.77 # 시장가 (0~1 사이 값)
+
+
 def calculate_kelly_polymarket(win_prob, market_price):
     """
     켈리 비율을 폴리마켓에 맞춘 계산기
@@ -21,13 +26,6 @@ def calculate_kelly_polymarket(win_prob, market_price):
     kelly_fraction_polymarket = (win_prob-market_price) / (1-market_price)
     
     return kelly_fraction_polymarket
-
-# ==========================================
-# ⚙️ [설정 영역]
-# ==========================================
-win_prob = 0.9   # 내 생각의 승률 (0~1 사이 값)
-market_price = 0.77 # 시장가 (0~1 사이 값)
-# ==========================================
 
 full_kelly_polymarket = calculate_kelly_polymarket(win_prob, market_price)
 

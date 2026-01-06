@@ -1,3 +1,8 @@
+# [설정 영역]
+win_prob = 0.77   # 승률 (0~1 사이 값)
+odds = 2.0        # 배당률
+loss_rate = 1.0   # 패배 시 순손실 비율 (기본값: 1.0 = 100% 손실)
+
 def calculate_kelly(win_prob, odds, loss_rate):
     """
     켈리 비율 계산기
@@ -24,14 +29,6 @@ def calculate_kelly(win_prob, odds, loss_rate):
     kelly_fraction = (b * p - a * q) / (a * b)
     
     return kelly_fraction
-
-# ==========================================
-# ⚙️ [설정 영역]
-# ==========================================
-win_prob = 0.77   # 승률 (0~1 사이 값)
-odds = 2.0        # 배당률
-loss_rate = 1.0   # 패배 시 순손실 비율 (기본값: 1.0 = 100% 손실)
-# ==========================================
 
 full_kelly = calculate_kelly(win_prob, odds, loss_rate)
 
