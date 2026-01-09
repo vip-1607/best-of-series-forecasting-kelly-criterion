@@ -132,5 +132,4 @@ if __name__ == "__main__":
         print(f"  - {games}세트에서 종료: {prob*100:.2f}%")
         expected_value += games * prob
     
-    print(f"\n평균 기대 경기 수: {expected_value:.2f} 세트")
     print(f"{'='*45}\n")
