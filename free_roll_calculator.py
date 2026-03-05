@@ -52,7 +52,7 @@ def calculate_partial_hedge(
     initial_invest, initial_price, hedge_price, hedge_ratio=1.0
 ):
     """
-    부분 헷징 계산기
+    부분 헷징 계산기s
 
     hedge_ratio를 조절하여 보험 범위를 선택합니다:
         1.0  = 완전 프리 롤 (손실 0원, 원금 100% 보장)
