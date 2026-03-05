@@ -2,16 +2,19 @@ import math
 from scipy.optimize import brentq, minimize_scalar
 
 # ===================== [설정 영역] =====================
-BEST_OF_N = 3                        # N판
+BEST_OF_N = 3  # N판
 TARGET_SCORE = (BEST_OF_N // 2) + 1  # M선승제
-CURRENT_SCORE = (0, 0)               # 현재 스코어 (A승수, B승수)
+CURRENT_SCORE = (0, 0)  # 현재 스코어 (A승수, B승수)
 
 # [역산 입력값]
-MARKET_MATCH_PROB = 77               # 시장이 생각하는 매치 승률 (%)
-K_LIST = [2, 3]                      # 남은 경기 길이 리스트 (현재 스코어 기준, 앞으로 몇 세트 더 할 때 끝나는지) #전체 경기로 바꾸고 싶음
-PROB_LIST = [53, 42]                 # 각 경기 길이에 해당하는 시장 확률 (%)
-HANDICAP_VALUE = 1.5                 # 핸디캡 값
-MARKET_HANDICAP_PROB = 78            # 시장이 생각하는 핸디캡 적용 후 A팀 커버 확률 (%)
+MARKET_MATCH_PROB = 77  # 시장이 생각하는 매치 승률 (%)
+K_LIST = [
+    2,
+    3,
+]  # 남은 경기 길이 리스트 (현재 스코어 기준, 앞으로 몇 세트 더 할 때 끝나는지) #전체 경기로 바꾸고 싶음
+PROB_LIST = [53, 42]  # 각 경기 길이에 해당하는 시장 확률 (%)
+HANDICAP_VALUE = 1.5  # 핸디캡 값
+MARKET_HANDICAP_PROB = 78  # 시장이 생각하는 핸디캡 적용 후 A팀 커버 확률 (%)
 # ========================================================
 
 
@@ -35,7 +38,7 @@ def calculate_series_win_rate(p, target_score, current_a, current_b):
 
     for a in range(target_score - 1, -1, -1):
         for b in range(target_score - 1, -1, -1):
-            dp[a][b] = p * dp[a+1][b] + (1-p) * dp[a][b+1]
+            dp[a][b] = p * dp[a + 1][b] + (1 - p) * dp[a][b + 1]
 
     return dp[current_a][current_b]
 
@@ -53,8 +56,12 @@ def find_implied_p(market_prob, target_score, current_a=0, current_b=0):
     Returns:
         내재된 세트 승률 (0~1)
     """
+
     def objective(p):
-        return calculate_series_win_rate(p, target_score, current_a, current_b) - market_prob
+        return (
+            calculate_series_win_rate(p, target_score, current_a, current_b)
+            - market_prob
+        )
 
     return brentq(objective, 0.0001, 0.9999)
 
@@ -82,12 +89,12 @@ def prob_end_at_k(p, k, M, current_a=0, current_b=0):
     # A가 이기는 경우: needs_a승, (k - needs_a)패
     # 단, 패 수 = k - needs_a < needs_b 이어야 (B가 먼저 끝나지 않음)
     if k >= needs_a and (k - needs_a) < needs_b:
-        total += math.comb(k - 1, needs_a - 1) * (p ** needs_a) * (q ** (k - needs_a))
+        total += math.comb(k - 1, needs_a - 1) * (p**needs_a) * (q ** (k - needs_a))
 
     # B가 이기는 경우: needs_b승, (k - needs_b)패
     # 단, 패 수 = k - needs_b < needs_a 이어야 (A가 먼저 끝나지 않음)
     if k >= needs_b and (k - needs_b) < needs_a:
-        total += math.comb(k - 1, needs_b - 1) * (q ** needs_b) * (p ** (k - needs_b))
+        total += math.comb(k - 1, needs_b - 1) * (q**needs_b) * (p ** (k - needs_b))
 
     return total
 
@@ -106,9 +113,10 @@ def solve_p_from_prob(game_end_prob, k, M, current_a=0, current_b=0):
     Returns:
         (p_high, p_low, reason) - 두 구간에서 탐색한 p값과 진단 사유
     """
+
     def objective(p):
         return prob_end_at_k(p, k, M, current_a, current_b) - game_end_prob
-        
+
     # 두 구간(0~0.5, 0.5~1)으로 나눠서 각각 탐색
     try:
         p_high = brentq(objective, 0.5, 0.9999)
@@ -116,7 +124,9 @@ def solve_p_from_prob(game_end_prob, k, M, current_a=0, current_b=0):
         p_high = None
 
     try:
-        p_low = brentq(objective, 0.0001, 0.500001) # p=0.500001로 설정한 이유는 p=0.5일 때 못 찾을수도 있기 때문
+        p_low = brentq(
+            objective, 0.0001, 0.500001
+        )  # p=0.500001로 설정한 이유는 p=0.5일 때 못 찾을수도 있기 때문
     except ValueError:
         p_low = None
 
@@ -129,8 +139,11 @@ def solve_p_from_prob(game_end_prob, k, M, current_a=0, current_b=0):
         else:
             reason = "시장 확률이 최댓값 근처 (접점)"
     else:
-        result = minimize_scalar(lambda p: -prob_end_at_k(p, k, M, current_a, current_b),
-                                 bounds=(0.0001, 0.9999), method='bounded')
+        result = minimize_scalar(
+            lambda p: -prob_end_at_k(p, k, M, current_a, current_b),
+            bounds=(0.0001, 0.9999),
+            method="bounded",
+        )
         max_prob = -result.fun
         reason = f"시장 확률({game_end_prob:.4f})이 수학적 최대({max_prob:.4f})를 초과"
 
@@ -156,13 +169,17 @@ def solve_p_from_multiple_lengths(k_list, prob_list, M, current_a=0, current_b=0
 
     results = []
     for k, game_end_prob in zip(k_list, prob_list):
-        p_high, p_low, reason = solve_p_from_prob(game_end_prob, k, M, current_a, current_b)
+        p_high, p_low, reason = solve_p_from_prob(
+            game_end_prob, k, M, current_a, current_b
+        )
         results.append((k, game_end_prob, p_high, p_low, reason))
 
     return results
 
 
-def calculate_handicap_formula(p, target_score, handicap_value, current_a=0, current_b=0):
+def calculate_handicap_formula(
+    p, target_score, handicap_value, current_a=0, current_b=0
+):
     """
     현재 스코어에서 핸디캡을 적용한 시리즈 승률 계산
 
@@ -184,21 +201,26 @@ def calculate_handicap_formula(p, target_score, handicap_value, current_a=0, cur
     for j in range(needs_b):
         final_b = current_b + j
         if target_score + handicap_value > final_b:
-            prob = math.comb(needs_a + j - 1, needs_a - 1) * (p ** needs_a) * ((1 - p) ** j)
+            prob = (
+                math.comb(needs_a + j - 1, needs_a - 1) * (p**needs_a) * ((1 - p) ** j)
+            )
             total_prob += prob
 
     # 2. B팀이 needs_b승 j패 더 해서 이기는 경우 (A는 j승 더 함)
     for j in range(needs_a):
         final_a = current_a + j
         if final_a + handicap_value > target_score:
-            prob = math.comb(needs_b + j - 1, needs_b - 1) * (p ** j) * ((1 - p) ** needs_b)
+            prob = (
+                math.comb(needs_b + j - 1, needs_b - 1) * (p**j) * ((1 - p) ** needs_b)
+            )
             total_prob += prob
 
     return total_prob
 
 
-def find_implied_p_handicap(market_handicap_prob, target_score, handicap_value,
-                            current_a=0, current_b=0):
+def find_implied_p_handicap(
+    market_handicap_prob, target_score, handicap_value, current_a=0, current_b=0
+):
     """
     핸디캡 적용 시장 승률에서 내재된 세트 승률을 브랜트법으로 역산
 
@@ -212,9 +234,14 @@ def find_implied_p_handicap(market_handicap_prob, target_score, handicap_value,
     Returns:
         내재된 세트 승률 (0~1)
     """
+
     def objective(p):
-        return calculate_handicap_formula(p, target_score, handicap_value,
-                                          current_a, current_b) - market_handicap_prob
+        return (
+            calculate_handicap_formula(
+                p, target_score, handicap_value, current_a, current_b
+            )
+            - market_handicap_prob
+        )
 
     return brentq(objective, 0.0001, 0.9999)
 
@@ -235,8 +262,10 @@ if __name__ == "__main__":
     implied_p = find_implied_p(MARKET_MATCH_PROB / 100, M, cur_a, cur_b)
     print(f"  시장 매치 승률: {MARKET_MATCH_PROB}%")
     print(f"  → 추정 세트 승률 p: {implied_p*100:.2f}%")
-    print(f"\n  해석: 현재 스코어 {cur_a}:{cur_b}에서 시장이 매치 승률을 "
-          f"{MARKET_MATCH_PROB}%로 평가한다면,")
+    print(
+        f"\n  해석: 현재 스코어 {cur_a}:{cur_b}에서 시장이 매치 승률을 "
+        f"{MARKET_MATCH_PROB}%로 평가한다면,"
+    )
     print(f"        A팀의 각 세트 승률을 약 {implied_p*100:.2f}%로 보고 있다는 뜻이다.")
 
     # [2] 경기 길이별 세트 승률 분석
@@ -248,7 +277,9 @@ if __name__ == "__main__":
         total_games = cur_a + cur_b + k
         # 정배팀 승률 선택: A가 정배면 p_high, B가 정배면 p_low
         p_fav = p_high if is_a_favorite else p_low
-        print(f"  전체 {total_games}세트에서 종료 (남은 {k}세트), 시장 추정 확률={game_end_prob:.4f}")
+        print(
+            f"  전체 {total_games}세트에서 종료 (남은 {k}세트), 시장 추정 확률={game_end_prob:.4f}"
+        )
         if p_fav is not None:
             print(f"    → 정배팀 추정 세트 승률 p: {p_fav:.4f}")
             if reason:
@@ -259,12 +290,18 @@ if __name__ == "__main__":
 
     # [3] 핸디캡 매치 승률 → 세트 승률 역산
     print(f"\n[3] 핸디캡({HANDICAP_VALUE}) 매치 승률 → 세트 승률 역산")
-    implied_p_hc = find_implied_p_handicap(MARKET_HANDICAP_PROB / 100, M, HANDICAP_VALUE, cur_a, cur_b)
+    implied_p_hc = find_implied_p_handicap(
+        MARKET_HANDICAP_PROB / 100, M, HANDICAP_VALUE, cur_a, cur_b
+    )
     print(f"  시장이 평가한 핸디캡이 적용된 매치 승률: {MARKET_HANDICAP_PROB}%")
     print(f"  → 추정 세트 승률 p: {implied_p_hc*100:.2f}%")
     print(f"\n  해석: 현재 스코어 {cur_a}:{cur_b}에서 핸디캡({HANDICAP_VALUE}) 적용 시")
-    print(f"        시장이 핸디캡이 적용된 매치 승률을 {MARKET_HANDICAP_PROB}%로 평가한다면,")
-    print(f"        A팀의 각 세트 승률을 약 {implied_p_hc*100:.2f}%로 보고 있다는 뜻이다.")
+    print(
+        f"        시장이 핸디캡이 적용된 매치 승률을 {MARKET_HANDICAP_PROB}%로 평가한다면,"
+    )
+    print(
+        f"        A팀의 각 세트 승률을 약 {implied_p_hc*100:.2f}%로 보고 있다는 뜻이다."
+    )
 
     print(f"\n{'='*50}")
 
@@ -287,12 +324,13 @@ if __name__ == "__main__":
     print(f"  {'종목':<25} {'추정 세트 승률':>12}")
     print(f"  {'-'*25} {'-'*12}")
     for source, p_val in all_estimates:
-        marker = " ◀ 최대" if (source, p_val) == (max_source, max_p) else \
-                 " ◀ 최소" if (source, p_val) == (min_source, min_p) else ""
+        marker = (
+            " ◀ 최대"
+            if (source, p_val) == (max_source, max_p)
+            else " ◀ 최소" if (source, p_val) == (min_source, min_p) else ""
+        )
         print(f"  {source:<25} {p_val*100:>11.2f}%{marker}")
     print(f"  {'-'*25} {'-'*12}")
     print(f"  {min_source}를 숏치고 {max_source}를 롱잡으세요")
 
     print(f"\n{'='*50}")
-
-
